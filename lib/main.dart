@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:fso_app/forms/login_form.dart';
+import 'package:fso_app/fso_auth_model.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const FsoApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => FsoAuthModel(),
+    child: const FsoApp(),
+  ));
 }
 
 class FsoApp extends StatelessWidget {
@@ -9,59 +15,69 @@ class FsoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo'),
-    );
+    return Consumer<FsoAuthModel>(builder: (context, authModel, _) {
+      return MaterialApp(
+        title: 'Flutter',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: MyHomePage(
+          onSigninClicked: () {
+            authModel.signin('username');
+          },
+        ),
+      );
+    });
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  const MyHomePage({Key? key, required this.onSigninClicked}) : super(key: key);
+  final VoidCallback onSigninClicked;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+    return Consumer<FsoAuthModel>(
+      builder: (_, authModel, ___) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(authModel.username() ?? 'NOT Signed in'),
+          ),
+          body: Center(
+            child: authModel.isAuthed()
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(authModel.username() ?? 'NOT signed in'),
+                      TextButton(
+                          onPressed: () {
+                            if (authModel.isAuthed()) {
+                              authModel.signout();
+                            } else {
+                              authModel.signin('username');
+                            }
+                          },
+                          child: Text(
+                              authModel.isAuthed() ? 'Sign out' : 'Sign in'))
+                    ],
+                  )
+                : LoginForm(
+                    onSignIn: (username) {
+                      if (authModel.isAuthed()) {
+                        authModel.signout();
+                      } else {
+                        authModel.signin(username);
+                      }
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 }

@@ -8,6 +8,10 @@ class FsoAuthModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? username() {
+    return _username;
+  }
+
   void signout() {
     _username = null;
     notifyListeners();
